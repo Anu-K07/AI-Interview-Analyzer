@@ -1,12 +1,4 @@
-
 streamlit
 opencv-python-headless
 deepface
-SpeechRecognition
-sentence-transformers
-torch
-torchvision
-pillow
-numpy
-pyaudio
-
+tf-keras
