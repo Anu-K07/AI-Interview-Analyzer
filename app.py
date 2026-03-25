@@ -1,53 +1,67 @@
 import streamlit as st
-from streamlit_mic_recorder import mic_recorder
+from streamlit_mic_recorder import speech_to_text
 
-# --- REPLIT-STYLE BLUE THEME ---
-st.set_page_config(page_title="AI Smart Interview Analyzer", layout="wide")
+# Page setup (Replit Blue Theme)
+st.set_page_config(page_title="AI Smart Interview", layout="centered")
 
 st.markdown("""
     <style>
-    /* Main Background */
     .stApp { background-color: #0E1117; color: white; }
-    
-    /* Header Style */
-    .main-header { font-size: 35px; font-weight: bold; color: #00D1FF; text-align: center; margin-bottom: 20px; }
-    
-    /* Box Styling */
-    .stTextArea textarea { background-color: #1A1C23; color: white; border: 1px solid #00D1FF; }
-    .stButton>button { background-image: linear-gradient(to right, #0072FF, #00C6FF); color: white; border-radius: 20px; border: none; font-weight: bold; }
-    
-    /* Question Box */
-    .q-box { background-color: #1A1C23; padding: 20px; border-radius: 10px; border-left: 5px solid #00D1FF; }
+    .stButton>button { background-color: #007bff; color: white; width: 100%; }
+    .score-box { border: 2px solid #007bff; padding: 20px; border-radius: 10px; text-align: center; }
     </style>
     """, unsafe_allow_html=True)
 
-st.markdown('<p class="main-header">🤖 AI Smart Interview Analyzer</p>', unsafe_allow_html=True)
+st.title("🎓 AI Smart Interview Analyzer")
 
-# Question logic
+# Unga old Replit-la iruntha same questions & answers
 questions = [
-    "What is the difference between a list and a tuple in Python?",
-    "Explain decorators in Python.",
-    "How does memory management work in Python?"
+    {"q": "What is the difference between a list and a tuple?", "a": "immutable"},
+    {"q": "What is a Decorator in Python?", "a": "function"},
+    {"q": "Explain Python Generators.", "a": "yield"}
 ]
 
-if 'q_idx' not in st.session_state:
-    st.session_state.q_idx = 0
+# Session state to keep track of marks and questions
+if 'score' not in st.session_state: st.session_state.score = 0
+if 'q_no' not in st.session_state: st.session_state.q_no = 0
 
-# UI Layout
-col1, col2 = st.columns([1, 1])
+if st.session_state.q_no < len(questions):
+    curr = questions[st.session_state.q_no]
+    
+    st.subheader(f"Question {st.session_state.q_no + 1}")
+    st.info(curr['q'])
 
-with col1:
-    st.markdown(f'<div class="q-box"><h3>Question {st.session_state.q_idx + 1}</h3><p>{questions[st.session_state.q_idx]}</p></div>', unsafe_allow_html=True)
-    st.write("")
-    user_text = st.text_area("Type your response here:", height=150)
+    # VOICE TO TEXT - Neenga pesuna inga type aagum
+    st.write("🎤 Click below and speak your answer:")
+    text = speech_to_text(language='en', key=f'speech_{st.session_state.q_no}')
 
-with col2:
-    st.info("🎤 Record your audio response for analysis")
-    audio = mic_recorder(start_prompt="Start Recording", stop_prompt="Stop Recording", key='recorder')
+    # Manual type box (if voice fails)
+    user_input = st.text_area("Your Answer:", value=text if text else "", height=100)
 
-if st.button("Submit Response"):
-    if user_text or audio:
-        st.success("Analysis Complete! Great job.")
-        if st.session_state.q_idx < len(questions) - 1:
-            st.session_state.q_idx += 1
+    if st.button("Submit Answer"):
+        if user_input:
+            # Replit style marking logic
+            if curr['a'].lower() in user_input.lower():
+                st.session_state.score += 20
+                st.success("Correct Answer! +20 Marks")
+            else:
+                st.error("Incorrect. Moving to next question.")
+            
+            st.session_state.q_no += 1
             st.rerun()
+        else:
+            st.warning("Please provide an answer first.")
+
+else:
+    # Final Marks Display
+    st.markdown(f"""
+    <div class="score-box">
+        <h2>Interview Over!</h2>
+        <h1 style='color: #007bff;'>Total Marks: {st.session_state.score} / 60</h1>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    if st.button("Restart"):
+        st.session_state.score = 0
+        st.session_state.q_no = 0
+        st.rerun()
